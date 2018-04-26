@@ -8,13 +8,17 @@
 </header>
 <main>
     <div class="main">
-        <% if ((url).length > 0) { %>
-          <lable><%- url -%></lable>
-          <br/><a id="a" href="http://localhost:3000">Go Back</a>
-        <% } else { %>
-          <lable>Invalid</lable>
-          <a id="a" href="http://localhost:3000">Go Back</a>
+        <% let b = 0 %>
+        <% for (var i = 0; i < a.length; i++) { %>
+          <% if(a[i] == qwry) { %>
+            <p><%- a[i] -%></p>
+            <%- b++ -%>
+          <% } %>
         <% } %>
+        <% if(b == 0) { %>
+          <p>None found</p>
+        <% } %>
+        <br/><a id="a" href="http://localhost:3000">Go Back</a>
     </div>
 </main>
 <footer>

@@ -1,9 +1,21 @@
+'strict'
+
 let express = require('express');
 let app = express();
 let query = express();
 let http = require('http');
 let https = require('https');
 let mongo = require('mongodb').MongoClient;
+//let mongoose = require('mongoose');
+
+
+let url = "mongodb://localhost:27017/mydb";
+let a = [];
+
+setTimeout(function(){
+  console.log(a.toString());
+  //console.log("STRINGIFIED: " + JSON.stringify(a));
+},3000);
 
 function checkAddress(addr){
   console.log('checking address...');
@@ -19,15 +31,49 @@ function checkAddress(addr){
       return 'Bad Address';
     }
   }else{
-    return newAddress[3];
+    return 'Bad Address';
   }
 }
 
-function renderer(req, res, qwry){
-  console.log("inside app test *");
-  console.log(qwry);
-  res.status(200).set({'content-type':'text/html'});
-  res.render('pages/show', {url: qwry});
+function checkDB(){
+  let links = {};
+  mongo.connect(url, (err, db) => {
+    if(err) throw (err);
+    let dbo = db.db('mydb');
+    dbo.collection('customers').find({},{address: 0}).toArray(function(err, result){
+      if(err) throw (err);
+      for(var i = 0; i < result.length; i++){
+        //console.log(JSON.stringify(result[i].name) + ", " + JSON.stringify(result[i].address));
+        links.url += result[i].name;
+      }
+
+      db.close();
+    });
+  });
+  return links;
+}
+
+function renderer(req, res, lnk, qwry){
+  a = [];
+  mongo.connect(url, (err, db, cb) => {
+    if(err) throw (err);
+    let dbo = db.db('mydb');
+    dbo.collection('customers').find({},{address: 0}).toArray(function(err, result){
+      if(err) throw (err);
+      for(var i = 0; i < result.length; i++){
+        console.log(JSON.stringify(result[i].name) + ", " + JSON.stringify(result[i].address));
+        a.push(result[i].name + ": " + result[i].address);
+      }
+      db.close();
+    });
+  });
+  setTimeout(function(){
+    console.log("inside app test *");
+    console.log(lnk.toString());
+    res.status(200).set({'content-type':'text/html'});
+    res.render('pages/show', {a, qwry});
+  },3000);
+
 }
 
 const port = process.argv[2];
@@ -42,7 +88,11 @@ app.get('/', (req, res) => {
 
 app.get('/show:url', (req, res) => {
   let myquery = checkAddress(req.query);
-  renderer(req, res, myquery);
+  //console.log("Before: " + JSON.stringify(responz));
+  if(myquery == 'Bad Address'){
+    myquery
+  }
+  renderer(req, res, a, myquery);
 });
 
 app.listen(port, () => {console.log("started server on port " + port);});

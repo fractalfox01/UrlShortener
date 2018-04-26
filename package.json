@@ -16,5 +16,11 @@
   "bugs": {
     "url": "https://github.com/fractalfox01/UrlShortener/issues"
   },
-  "homepage": "https://github.com/fractalfox01/UrlShortener#readme"
+  "homepage": "https://github.com/fractalfox01/UrlShortener#readme",
+  "dependencies": {
+    "ejs": "^2.5.9",
+    "express": "^4.16.3",
+    "mongodb": "^3.0.7",
+    "mongoose": "^5.0.16"
+  }
 }
