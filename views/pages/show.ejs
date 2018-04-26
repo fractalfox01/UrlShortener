@@ -1,0 +1,24 @@
+<html lang="en">
+<head>
+    <% include ../partials/head %>
+</head>
+<body class="container">
+<header>
+    <% include ../partials/header %>
+</header>
+<main>
+    <div class="main">
+        <% if ((url).length > 0) { %>
+          <lable><%- url -%></lable>
+          <br/><a id="a" href="http://localhost:3000">Go Back</a>
+        <% } else { %>
+          <lable>Invalid</lable>
+          <a id="a" href="http://localhost:3000">Go Back</a>
+        <% } %>
+    </div>
+</main>
+<footer>
+    <% include ../partials/footer %>
+</footer>
+</body>
+</html>
