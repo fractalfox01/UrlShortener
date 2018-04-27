@@ -8,15 +8,15 @@
 </header>
 <main>
     <div class="main">
-        <% let b = 0 %>
-        <% for (var i = 0; i < a.length; i++) { %>
-          <% if(a[i] == qwry) { %>
-            <p><%- a[i] -%></p>
-            <%- b++ -%>
+        <% let b = true %>
+        <% for (var i = 0; i < lnk.length; i++) { %>
+          <% if(lnk[i] == qwry) { %>
+            <h3><%- a[i] -%></h3>
+            <% b = false %>
           <% } %>
         <% } %>
-        <% if(b == 0) { %>
-          <p>None found</p>
+        <% if(b) { %>
+          <p>Redirecting</p>
         <% } %>
         <br/><a id="a" href="http://localhost:3000">Go Back</a>
     </div>
