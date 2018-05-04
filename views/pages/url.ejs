@@ -1,0 +1,26 @@
+<html lang="en">
+<head>
+    <% include ../partials/head %>
+</head>
+<body class="container">
+<header>
+    <% include ../partials/header %>
+</header>
+<main>
+    <div class="main">
+        <p>redirecting here: <%= ans %></p>
+        <br/>
+        <p><a target="_self" href="http://localhost:3000/">Go Back</a> </p>
+    </div>
+</main>
+<footer>
+    <% include ../partials/footer %>
+</footer>
+    <script>
+      console.log("redirecting to <%= ans %>");
+      window.onload = function(){
+        window.location = "<%= ans %>";
+      }
+    </script>
+</body>
+</html>
