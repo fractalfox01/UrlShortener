@@ -1,18 +1,39 @@
-//need db address population
-// need add to db if not found.
-// need make new link...
+// need db address population - done
+// need add to db if not found. - done
+// need make new link... - done, id
+// need query db on link redirect. stored as { id: <number>, url: 'http<s>://www.<some address>.<com>' }
+
+// resolve the function mess i have going on ie. use/learn some promises and async.
 
 let express = require('express');
 
 let app = express();
-let query = express();
-let http = require('http');
-let https = require('https');
+
+//let http = require('http');
+//let https = require('https');
 let mongo = require('mongodb').MongoClient;
 //let mongoose = require('mongoose');
 
 let globa;
 let url = "mongodb://localhost:27017/mydb";
+
+  // Delete a Collection(Table). delets 'customers' collection.
+//mongo.connect(url, (err,db) => {
+//  if(err) throw (err);
+//  let dbo = db.db('mydb');
+//  dbo.collection('urls').drop(function(err, delOK){
+//    if(err) throw (err);
+//    if(delOK) console.log("Collection Deleted");
+//    db.close();
+//  });
+//  // OR
+////dbo.dropCollection("customers", function(err, delOK){
+////  if(err) throw (err);
+////  if(delOK) res.write("Collection Deleted");
+////  res.end();
+////  db.close();
+////});
+//});
 
   // Creates new collection.
 //mongo.connect(url, (err, db) => {
@@ -24,14 +45,14 @@ let url = "mongodb://localhost:27017/mydb";
 //    db.close();
 //  })
 //});
-  // Adds items into collection.
+////   Adds items into collection.
 //mongo.connect(url, (err, db) => {
 //  if(err) throw (err);
 //  let dbo = db.db('mydb');
 //  let myobj = [
-//    { url: 'http://www.google.com'},
-//    { url: 'http://www.coderealms.com'},
-//    { url: 'http://www.spiraledthoughts.com'}
+//    { _id: 1, url: 'http://www.google.com'},
+//    { _id: 2, url: 'http://www.coderealms.com'}
+////    { url: 'http://www.spiraledthoughts.com'}
 //  ];
 ////    let myobj = [
 ////    { name: 'Chocolate Hell', address: 'One Way 99'},
@@ -45,14 +66,136 @@ let url = "mongodb://localhost:27017/mydb";
 //  });
 //});
 
+//-----------------------------------------------------
+//=====================================================
+
+const port = process.argv[2];
+app.engine('ejs', require('ejs').renderFile);
+app.set('view engine', 'ejs');
+
+//==================================================================
+//        functions for the '/url/:id' route.
+//==================================================================
+function display(req, res, next, ans){
+  res.status(200).set({'content-type':'text/html'});
+  res.render('pages/url', { ans });
+}
+
+function getUrlFromId(req, res, next, idToFind, cb){
+  mongo.connect(url, (err, db) => {
+    if(err) throw (err);
+    let dbo = db.db('mydb');
+    console.log('looking for: ' + idToFind);
+    //console.log('looking for: ' + idToFind);
+    dbo.collection("urls").find({_id: idToFind}).toArray(function(err, result){
+      if(err) throw (err);
+      console.log('result ' + JSON.stringify(result[0].url));
+      db.close();
+      cb(req, res, next, result[0].url);
+    });
+  });
+}
+
+app.get('/url/:id', (req, res, next) => {
+  // fetches the corresponding id's url from the database.
+  let num = req.params.id;
+  console.log("to string: " + req.params.id);
+  if(Number(num) != NaN){
+    getUrlFromId(req, res, next, Number(req.params.id), display);
+  }else{
+    res.status(200).set({'content-type':'text/html'});
+    res.render('pages/url', { num });
+  }
+});
+
+//=================================================================
+//        functions for the '/retrieve' route.
+//==================================================================
+function getIdFromUrl(req, res, next, urlToFind, cb){
+  mongo.connect(url, (err, db) => {
+    if(err) throw (err);
+    let dbo = db.db('mydb');
+    console.log('looking for: ' + urlToFind);
+    //console.log('looking for: ' + idToFind);
+    if(urlToFind != NaN){
+      console.log("this is a number: " + urlToFind);
+      dbo.collection("urls").find({url: urlToFind}).toArray(function(err, result){
+        if(err) throw (err);
+        console.log('result ' + JSON.stringify(result[0]._id));
+        db.close();
+        if(JSON.stringify(result[0]._id) == 'undefined'){
+          cb(req, res, next, 'Bad Address');
+        }else{
+          cb(req, res, next, result[0]._id);
+        }
+      });
+    }else{
+      console.log("this is NOT a number: " + urlToFind);
+      cb(req, res, next, 'Bad Address');
+    }
+
+  });
+}
+
+function showInsert(req, res, next, dd){
+  console.log('Retrieve page');
+  res.status(200).set({'content-type':'text/html'});
+  res.render('pages/retrieve', { dd });
+}
+
+app.get('/retrieve', (req, res, next) => {
+  let dd = req.query['url'];
+  console.log("dd is " + dd.toString());
+  dd = 'Bad Address';
+  res.status(200).set({'content-type':'text/html'});
+  res.render('pages/retrieve', { dd });
+});
+
+//=================================================================
+//        functions for the '/check' route.
+//==================================================================
+function execute(req, res, sendBack){
+  console.log("SendBack is: " + sendBack);
+  res.render('pages/check');
+  return true;
+}
+async function checkAndSend(req, res){
+  let sendBack = [];
+  let response;
+  try{
+    response = await mongo.connect(url, (err, db) => {
+      if(err) throw err
+      let dbo = db.db('mydb');
+      dbo.collection('urls').find({}).toArray(function(err, result){
+        if(err) throw (err);
+        for(var i = 0; i < result.length; i++){
+          console.log("result --> " + JSON.stringify(result[i]));
+          if(req.query['url'] == (result[i]['url']).toString()){
+            sendBack.push(result[0]['url']);
+            execute(req, res, sendBack);
+            db.close();
+            console.log('found');
+          }
+        }
+        if(sendBack.length == 0){
+          // req.query['url'] needs to be added to database here (before render).
+          execute(req, res, 'Not Found');
+          db.close();
+        }
+      });
+    })
+  }catch (err){
+    console.log(err);
+  };
+}
 
 function checkAddress(addr){
   //console.log('checking address...');
-  let newAddress = JSON.stringify(addr).split('"');
-  if(newAddress[3].includes('http') && !newAddress[3].includes('https')){
-    if(newAddress[3].includes('www')){
-      if(newAddress[3].includes('.com') || newAddress[3].includes('.net') || newAddress[3].includes('.org') || newAddress[3].includes('.io') ){
-        return newAddress[3];
+//  let newAddress = JSON.stringify(addr).split('"');
+  if(addr.includes('http') || addr.includes('https')){
+    if(addr.includes('www')){
+      if(addr.includes('.com') || addr.includes('.net') || addr.includes('.org') || addr.includes('.io') ){
+        return addr;
       }else{
         return 'Bad Address';
       }
@@ -64,87 +207,19 @@ function checkAddress(addr){
   }
 }
 
-// retrieve all documents in collection.
-function checkDB(){
-  a = [];
-  mongo.connect(url, (err, db, cb) => {
-    if(err) throw (err);
-    let dbo = db.db('mydb');
-    dbo.collection('urls').find({},{_id: 0}).toArray(function(err, result){
-      if(err) throw (err);
-      console.log("Full DataBase: ");
-      for(var el in result){
-        console.log(result.url);
-      }
-      console.log("checkdb Result: " + JSON.stringify(result));
-      for(var i = 0; i < result.length; i++){
-        console.log(JSON.stringify(result[i].url));
-        a.push(result[i].url);
-      }
-      db.close();
-    });
-  });
-  return a;
-}
-
-function renderer(req, res, lnk, qwry){
-  setTimeout(function(){
-    console.log("rendering /show:url? response");
-    console.log(lnk.toString());
-    res.status(200).set({'content-type':'text/html'});
-    res.render('pages/show', {lnk, qwry});
-  },3000);
-
-}
-
-function putNewIn(newLink){
-  setTimeout(function(){
-    console.log("NEWLINK: " + newLink);
-    mongo.connect(url, (err, db) => {
-      if(err) throw (err);
-      let dbo = db.db('mydb');
-      let newIn = { url: newLink.toString() };
-      dbo.collection('urls').insertOne(newIn, (err, results) => {
-        if(err) throw (err);
-        console.log(results);
-        db.close();
-      });
-    });
-  },2500);
-}
-
-const port = process.argv[2];
-app.engine('ejs', require('ejs').renderFile);
-app.set('view engine', 'ejs');
-
+app.get('/check', (req, res, next) => {
+  console.log('Referal from: ' + req.headers.referer);
+  console.log(req.query['url']);
+  res.status(200).set({'content-type':'text/html'});
+  //res.render('pages/check');
+  checkAndSend(req, res);
+});
 
 app.get('/', (req, res) => {
   console.log("Entering index - " + JSON.stringify(req.connection.remoteAddress));
   res.status(200).set({'content-type':'text/html'});
   res.render('pages/index');
   console.log("Leaving index");
-});
-
-app.get('/show:url', (req, res) => {
-  let myquery = checkAddress(req.query);
-  //console.log("Before: " + JSON.stringify(responz));
-  a = checkDB();
-  let flag = true;
-  setTimeout(function (){
-    for(var j = 0; j < a.length; j++){
-      if(myquery == a[j]){
-        renderer(req, res, a, myquery);
-        flag = false;
-      }
-      if(j == (a.length-1) && flag){
-        putNewIn(myquery);
-        res.status(200).set({'content-type':'text/html'});
-        res.render('pages/insert');
-        flag = true;
-      }
-    }
-  },3000);
-
 });
 
 app.listen(port, () => {console.log("started server on port " + port);});

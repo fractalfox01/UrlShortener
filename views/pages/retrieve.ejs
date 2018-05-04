@@ -1,0 +1,25 @@
+<html lang="en">
+<head>
+    <% include ../partials/head %>
+</head>
+<body class="container">
+<header>
+    <% include ../partials/header %>
+</header>
+<main>
+    <div class="main">
+        <%_ if(dd != 'Bad Address') {  _%>
+          <p>Short url: <a target="_self" href="http://localhost:3000/url/<%= dd %>">localhost:3000/url/<%= dd %></a></p>
+        <%_ } else {  _%>
+          <p>Bad Address</p>
+        <%_ } _%>
+        <br/>
+        <p><a target="_self" href="http://localhost:3000/">Go Back</a> </p>
+    </div>
+    </div>
+</main>
+<footer>
+    <% include ../partials/footer %>
+</footer>
+</body>
+</html>

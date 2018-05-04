@@ -4,7 +4,8 @@
   "description": "A Simple URL Shortener",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "tst": "node async-test-server.js 3000",
+    "test": "node testServer.js 3000",
     "start": "node server.js"
   },
   "repository": {
