@@ -13,7 +13,7 @@ The URL https://lml.glitch.me/ displays the HomePage.
 
 the URL https://lml.glitch.me/url Is used to create a new shortened URL link.
 
-### Example: `https://lml.glitch.me/url/?url="https://www.freecodecamp.org"`
+### Example: `https://lml.glitch.me/url/?url="https://www.freecodecamp.org/"`
 
 ,Redirects to a JSON format page with the new shortened URL link listed.
 
