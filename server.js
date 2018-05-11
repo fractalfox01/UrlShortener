@@ -1,137 +1,201 @@
+require('dotenv').config();
+
 const express = require('express');
 const app = express();
-const path = require('path');
-const http = require('http');
-const https = require('https');
-const delay = require('express-delay');
-const mongo = require("mongodb").MongoClient;
-//app.use('/url/',express.static('/url/'));
-//app.use(delay(1000));
-let f = false;
 
-function parseURL(arg){
-  console.log("First");
-  let final = '';
-  const regWWW = /\^www/;
-  let linktest1 = false;
-  let linktest2 = false;
-  let test = arg.split('/');
-  for(var i = 0; i < test.length; i++){
-    if(test[i] == 'http:' || test[i] == 'https:'){
-      linktest1 = true;
-      final += test[i];
-    }
-    if(test[i].includes('www') && linktest1){
-      let aa = test[i].split('.');
-      if(aa[0] == 'www'){
-        if(aa[2] == 'com' || aa[2] == 'org' || aa[2] == 'net'){
-          final += "//" + test[i];
-        }else{
-          final = "not a url";
+const mongo = require('mongodb');
+
+const port = 3000;
+// .env used for testing purposes only.
+const url = process.env.URL;
+const zeno = process.env.ZENO;
+
+function viewAll(){
+  //Displays all records found in collection 'links'.
+  mongo.connect(url, function(err, db){
+    if(err) return (err);
+    if(db){
+      console.log("Connected successfully To DB:", "'" + db['s']['options']['dbName'] + "'");
+      let dbo = db.db('url-shortener');
+      dbo.collection('links').find({}).toArray((err, resp) => {
+        if(err) console.log(err.stack);
+        if(resp){
+          console.log("Viewed");
+          console.log(resp);
+          db.close();
+          return (resp);
         }
-      }
+      });
+    }
+  });
+}
+function verifyAddr(address){
+  // Verifies URL. checks for http, https, www, com, org, net.
+  // Takes a String as input.
+  // Returns True for a Valid address. False for invalid.
+  if(address.includes('http://') || address.includes('https://')){
+    console.log('http found');
+    if( address.includes('.com') || address.includes('.org') || address.includes('.net') || address.includes('.gov')){
+      console.log('www with domain found');
+      return true;
     }
   }
-  if(final == 'http:' || final == 'https:'){
-    final = 'not a url';
+  else{
+    console.log('Bad Address');
+    return false;
   }
-  return final;
 }
 
-function checkAddress(report){
-  let flag = false;
-  // Function handles http and https GET requests to the desired url
-  // function needs to handle a request limit per an arbitrary amount of time. prevent DOS/DDOS
-  console.log("Second");
-  let len = report.length;
-  let parsed = '';
-  //strips (http://) from ex. http://www.coderealms.com
-  console.log(report);
-  if(report.includes('https')){
-    parsed = report.substring(8, len);
-    https.get({hostname: parsed}, (resp) => {
-      let rawData = '';
+function queryNum(req, res){
+  // Queries for the pass number.
+  // Example. A GET request like " localhost:3000/?3 " returns the url associated with _id 3.
+  // A failed request returns "Bad Address".
+  // A request for 1337.1337, returns full db.
+  mongo.connect(url)
+    .then(function(db){
+      let temp = Object.keys(req.query);
+      let fetch = Number(temp[0]);
+      if(fetch == zeno){
+        // Lists entire collection
+        let dbo = db.db('url-shortener');
+        dbo.collection('links').find({}).toArray()
+        .then(function(resp){
+          res.status(200).set({'content-type':'text/html'});
+          for(var i = 0; i < resp.length; i++){
+            res.write("<h1>" + JSON.stringify(resp[i]) + "</h1>");
+          }
+          res.end();
+        })
+        .catch(function(err){
+          console.log(err.stack);
+          res.status(200).set({'content-type':'text/html'});
+          res.write("<h1>Error2</h1>");
+          res.end();
+        })
+      }else if(fetch){
+        let dbo = db.db('url-shortener');
+        dbo.collection('links').find({_id: fetch}).toArray()
+          .then(function(resp){
+            res.status(200).set({'content-type':'text/html'});
+            res.write("<h1>" + JSON.stringify(resp[0].url) + "</h1>");
+            res.write("<script>");
+            res.write("console.log('working');");
+            res.write("window.location =" +
+            JSON.stringify(resp[0].url) + ";");
+            res.write("</script>")
+            res.end();
+          })
+          .catch(function(err){
+            console.log(err.stack);
+            res.status(200).set({'content-type':'text/html'});
+            res.write("<h1>Server Error 3 - Undefined Request Made.</h1>");
+            res.write('<pre style="background-color:#555;color:#ccf;width:600px;padding:10px">' + err.stack + "</pre>");
+            res.end();
+          })
+      }else{
+        let dbo = db.db('url-shortener');
+        dbo.collection('links').find({}).toArray()
 
-      if(resp.statusCode == 200){
-        flag = true;
+          .then(function(resp){
+            res.status(200).set({'content-type':'text/html'});
+            res.write('<div style="margin-left:50px;width:100vw;height:2em;"><h1 style="color:blue;">Basic Usage:</h1></div>');
+            res.write('<ul>');
+            res.write('<li><h2>The URL <span style="color:#0ea;">https://lml.glitch.me</span> displays This page.</h2></li>');
+            res.write('<li><h2>The URL <span style="color:#0ea">https://lml.glitch.me/url/</span> Creates a new shortened link: <span style="color:#0e0;">Example.</span> <label style="color:#d00;" href="https://lml.glitch.me/url/?url='+'"https://www.freecodecamp.org/"'+'">https://lml.glitch.me/url/?url="https://www.freecodecamp.org/"</label> , Redirects to a JSON page with the new shortened URL link listed.</h2></li>');
+            res.write('<li><h2>If the URL inserted at https://lml.glitch.me/url/ is a new address to the database, the URL is assigned the next id in line and a JSON response is written to the screen.</h2></li>');
+            res.write('<li><h2>Visit the URL https://lml.glitch.me/?1337.1337 to view the full database.</h2></li>');
+            res.write('</ul>');
+            res.end();
+
+          })
+          .catch(function(err){
+            console.log(err.stack);
+          })
       }
-      resp.on('data', (chunk) => { rawData += chunk;});
-
-      resp.on('end', () => {
-        console.log("verify closed");
-        console.log(flag);
-        f = flag;
-      });
+    })
+    .catch(function(err){
+      console.log(err.stack);
     });
+}
+
+function newlookup(req, res){
+  let lookup = req.query.url;
+  console.log("unedited ",lookup);
+  lookup = lookup.substring(1, lookup.length-1);
+  console.log("after edited ",lookup);
+  if(verifyAddr(lookup)){
+    // address is valid.
+    mongo.connect(url)
+      .then(function(db){
+        let dbo = db.db('url-shortener');
+        dbo.collection('links').find({}).toArray()
+          .then(function(resp){
+            let len = resp.length
+            for(var i = 0; i < len; i++){
+              // Iterate though db.
+              console.log(resp[i]);
+              if(lookup == resp[i].url){
+                // lookup was found, end's the for loop.
+                res.status(200).set({'content-type':'application/json'});
+                res.json({
+                  'Link Found': resp[i].url,
+                  'ID': resp[i]._id,
+                  'Your Shortened Link': 'https://lml.glitch.me/?' + resp[i]._id,
+                })
+                res.end();
+                db.close();
+                break;
+              }
+              if(i == len-1){
+                let myObj = {
+                  _id: (len+1),
+                  url: lookup
+                };
+                dbo.collection('links').insertOne(myObj)
+                  .then(function(resp){
+                    res.status(200).set({'content-type':'application/json'});
+                    res.json({
+                      'New Redirect URL': 'http://lml.glitch.me/?' + (len+1),
+                      'redirecting to ': lookup
+                    });
+                    res.end();
+                    db.close();
+                  })
+                  .catch(function(err){console.log(err.stack);})
+              }
+            }
+
+          })
+          .catch(function(err){
+            console.log(err.stack);
+          })
+      })
+      .catch(function(err){
+        console.log(err.stack);
+      })
   }else{
-    parsed = report.substring(7, len);
-    http.get({hostname: parsed}, (resp) => {
-      let rawData = '';
-
-      if(resp.statusCode == 200){
-        flag = true;
-      }
-      resp.on('data', (chunk) => { rawData += chunk;f = flag;});
-
-      resp.on('end', () => {
-        console.log("verify closed");
-        console.log(flag);
-
-      });
-    });
-  }
-  console.log(parsed);
-}
-
-function test(res, report){
-  setTimeout(function(){
-    console.log("Third");
-    if(f){
-      res.json({'address': report, 'res_status': f});
-
-      res.end();
-    }else{
-      res.json({'address': report, 'res_status': f});
-
-      res.end();
-    }
-  },300);
-}
-
-app.all('/url/*', (req, res) => {
-  console.log("/url/* Accessed @ - " + new Date());
-  console.log("Queried: " + req.originalUrl + "; From: " + req.headers['x-forwarded-for']);
-  let report = parseURL(req.originalUrl);
-  console.log("Report is " + report);
-  if(report == ''){
-    res.status(200);
-    res.set({'content-type':'application/json'});
-    res.json({report: 'not accepted'});
+    // address not valid.
+    res.status(200).set({'content-type':'application/json'});
+    res.json({'Invalid Address' : lookup});
     res.end();
-  }else{
-    if(report != 'not a url'){
-      checkAddress(report);
-    }
-    // test function: handles this servers response (based on f variable).
-    test(res, report);
   }
-  f = false;
+}
 
+app.get('/url', function(req, res, next){
+  newlookup(req, res);
 });
 
-
-app.all('*', (req, res) => {
-  console.log("index working");
-
-  res.status(200);
-  res.set({'content-type':'text/html'});
-
-  res.write("<h1>Working</h1>");
-  res.end();
+app.get("/*", function(req, res, next){
+  queryNum(req, res);
+  next();
 });
 
-const listener = app.listen(3000, () => {
-  console.log("Starting Server On port " + listener.address().port);
-  console.log('@ - ' + new Date());
-  console.log('');
+app.get('*', function(req, res){
+  console.log("server url ",req.originalUrl);
+  
+  console.log("Querying for ",req.query);
 });
+
+app.listen(port, () => {
+  console.log("Server started on port ", port);
+})
