@@ -21,6 +21,6 @@ If the URL inserted at https://lml.glitch.me/url is a new address to the databas
 
 Existing links can be accessed bt navigating to the URL
 
-#### https://lml.glitch.me/?`<Associated ID Here>`
+#### https://lml.glitch.me/? `<Associated ID Here>`
 
 ##### Use the ID 1337.1337 to view the full database.
