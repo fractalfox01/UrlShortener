@@ -62,7 +62,10 @@ function queryNum(req, res){
         .then(function(resp){
           res.status(200).set({'content-type':'text/html'});
           for(var i = 0; i < resp.length; i++){
-            res.write("<h1>" + JSON.stringify(resp[i]) + "</h1>");
+            let tmp = "https://lml.glitch.me/?" + i;
+            res.write("<h1 style='margin-left:10vw;background-color:#cca;color:red;text-align:center;width:50px;'>" + i + ". </h1><h5 style='padding:5px 0px 5px 40px;background-color:#000;width:50vw;color:#ccf;margin-left:20vw;'>Redirects to <span style='color:#0d0;padding-left:5px;'>" + JSON.stringify(resp[i].url) + "</span></h1>");
+            res.write("<p style='margin-left:23vw;'>Shortened URL: <a style='padding-left:10px;' target='_blank' href='" + tmp + "'>" + tmp + "</a></p>");
+            res.write("<hr style='width:80vw;height:3px;background-color:blue;'/>");
           }
           res.end();
         })
