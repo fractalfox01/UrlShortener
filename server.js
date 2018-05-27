@@ -185,6 +185,10 @@ function newlookup(req, res){
 }
 
 app.get('/url', function(req, res, next){
+  if(!req.query.url || (req.originalUrl == "/url" || req.originalUrl == "/url/")){
+    res.send("Missing Parameters");
+    return;
+  }
   newlookup(req, res);
 });
 
