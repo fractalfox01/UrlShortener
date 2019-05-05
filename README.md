@@ -1,3 +1,6 @@
+# NO LONGER HOSTED
+The following code was working at the time of posting but is no longer maintained.
+
 # UrlShortener
 A Simple URL Shortener
 
